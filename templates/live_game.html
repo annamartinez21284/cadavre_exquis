@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+
+  {% block title %}
+      LIVE GAME
+
+  {% endblock %}
+
+
+  {% block main %}
+
+
+  <object align="left">ROUND: <span class="badge">{{round}}</span></object><br>
+  <object align="left">GROUP: <span class="badge">{{group_name}}</span></object>
+    <br>
+  {% if isturn %}
+
+    <form action="/next" method="post">
+      <div class="form-group">
+
+        {% if sentence %}
+        <label for="lastsentence">{{lastplayer}} wrote:</label><br>
+        <textarea id="lastsentence" rows="3" col="100">{{sentence}}</textarea><br>
+
+        <label for="textarea">Continue the story with your sentence...</label><br>
+        {% else %}
+        <label for="textarea">Start the story with the first sentence!</label><br>
+        {% endif %}
+
+        <textarea name="newsentence" class="form-control" id="textarea" rows="3" cols="100"></textarea>
+      </div>
+
+        <button type="submit">Next player</button>
+        <button type="submit" formaction="/end_game" ><span class="glyphicon glyphicon-envelope"></span> End story</button>
+    </form>
+    {% else %}
+     {{player}} is currently writing... <span class="glyphicon glyphicon-pencil"></span>
+    {% endif %}
+
+
+
+  {% endblock %}

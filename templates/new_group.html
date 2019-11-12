@@ -1,0 +1,79 @@
+{% extends "layout.html" %}
+
+  {% block title %}
+      Start a new group
+
+  {% endblock %}
+
+
+  {% block main %}
+  <!-- Below are for adding more fields dynamically in new group-->
+  <script>
+  $(function()
+  {
+      $(document).on('click', '.btn-add', function(e)
+      {
+          e.preventDefault();
+
+          var controlForm = $('.controls form:first'),
+              currentEntry = $(this).parents('.entry:first'),
+              newEntry = $(currentEntry.clone()).appendTo(controlForm);
+
+          newEntry.find('input').val('');
+          controlForm.find('.entry:not(:last) .btn-add')
+              .removeClass('btn-add').addClass('btn-remove')
+              .removeClass('btn-success').addClass('btn-danger')
+              .html('<span class="glyphicon glyphicon-minus"></span>');
+      }).on('click', '.btn-remove', function(e)
+      {
+  		$(this).parents('.entry:first').remove();
+
+  		e.preventDefault();
+  		return false;
+  	});
+  });
+
+</script>
+
+
+
+
+<div class="control-group" id="fields">
+
+    <div class="controls">
+         <form role="form" autocomplete="off" action="/new_group" method="post">
+            <label class="control-label" for="field1">Choose a Group Name</label>
+            <br>
+             <input class="form-control" name="group_name" type="text" placeholder="Choose a group name"/>
+             <br><br>
+             <label class="control-label" for="field1">Add at least 3 Group Members</label>
+            <div class="entry input-group">
+              <input class="form-control" name="fields[]" type="text" placeholder="Player name" />
+            	<span class="input-group-btn">
+                    <button class="btn btn-success btn-add" type="button">
+                        <span class="glyphicon glyphicon-plus"></span>
+                    </button>
+
+                    <button class="btn btn-secondary" type="button">Add this member</button>
+                </span>
+            </div>
+          </div>
+          <small>Press <span class="glyphicon glyphicon-plus gs"></span> to add another player</small>
+          <br><br>
+              <button class="btn btn-secondary" type="submit" name="create"><strong>CREATE GROUP</strong></button>
+
+        </form>
+    <br>
+
+
+</div>
+
+
+
+
+
+
+
+
+
+  {% endblock %}

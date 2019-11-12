@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+
+  {% block title %}
+      Start a New Game
+
+  {% endblock %}
+
+
+  {% block main %}
+    {% if groups %}
+      Select Group:<br>
+      <form action="/new_game" method="post">
+        <select name=group>
+            {% for group in groups %}
+            <option value="{{group["group_name"]}}">{{group["group_name"]}}</option>
+            {% endfor %}
+
+        </select>
+        <button type="submit">Select & Start Game</button>
+      </form>
+    {% else %}
+          You are not member of any groups yet. <a href="/new_group">Start</a> or <a href="/join_group">join an existing group</a>, to start a game.
+    {% endif %}
+
+
+
+  {% endblock %}

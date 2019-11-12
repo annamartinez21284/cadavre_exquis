@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+
+  {% block title %}
+      Groups
+  {% endblock %}
+
+  {% block main %}
+      {% if groups %}
+        <table>
+          {% for group in groups %}
+          <tr>
+            <td><a href="/group/{{group["group_name"]}}">{{group["group_name"]}}</a></td>
+            <!-- below NOT WORKING -->
+            <form>
+              <td><button name="leave" class="btn btn-secondary" type="submit" formaction="/leave_group/{{group["group_name"]}}">Leave Group</button></td>
+            </form>
+          </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <p>Looks like you are not in any groups! Create a new one or join an existing one!</p>
+      {% endif %}
+  {% endblock %}

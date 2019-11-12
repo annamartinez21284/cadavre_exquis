@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+  {% block title %}
+      Group Name
+  {% endblock %}
+
+  {% block main %}
+
+      Group: {{group}}
+      <form>
+        <button name="leave" class="btn btn-secondary" type="submit" formaction="/leave_group/{{group}}">Leave Group</button><br>
+        <button name="add" class="btn btn-secondary" type="submit" formaction="/add/{{group}}"> Add Members</button>
+      </form>
+      <br>
+
+      TODO
+      Show here: Group DETAILS, MEMBERS, GAMES, Leave, Join, ADD members (redir to similar templ as new_group)
+
+
+
+
+  {% endblock %}
