@@ -6,17 +6,16 @@
 
   {% block main %}
 
-      Group: {{group}}
+      Group: {{group["group_name"]}}<br>
+      Members:<br>
+      {% for member in members %}
+       {{member["name"]}}<br>
+      {% endfor %}<br>
       <form>
         <button name="leave" class="btn btn-secondary" type="submit" formaction="/leave_group/{{group}}">Leave Group</button><br>
         <button name="add" class="btn btn-secondary" type="submit" formaction="/add/{{group}}"> Add Members</button>
       </form>
       <br>
-
-      TODO
-      Show here: Group DETAILS, MEMBERS, GAMES, Leave, Join, ADD members (redir to similar templ as new_group)
-
-
 
 
   {% endblock %}

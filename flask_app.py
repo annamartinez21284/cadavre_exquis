@@ -41,14 +41,14 @@ Session(app) #creates Session-object by passing it the application
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def index():
-  # stores row from group AND game JOINTLY- USERspecific
+  # stores row from group AND active game JOINTLY- USERspecific - games the USER is playing
   session["userrow"]=query_db("SELECT * FROM games INNER JOIN groups ON groups.group_name=games.group_name INNER JOIN users ON users.user_id=groups.user_id WHERE users.user_id=? AND games.active=?", [session["user_id"], 1], one=True)
-  # stores row from group AND game JOINTLY where user is group-member - GROUPspecific
+  # stores row from group AND active game JOINTLY where user is group-member - GROUPspecific
   session["gamerow"] = query_db("SELECT * FROM groups INNER JOIN games ON games.group_name=groups.group_name INNER JOIN users ON groups.user_id=users.user_id WHERE groups.user_id=? AND games.active=?", [session["user_id"], 1], one=True)
   if session["userrow"] is None:
     if request.method == "POST":
       groups = query_db("SELECT group_name FROM groups WHERE user_id=?", [session["user_id"]], one=False)
-      print("GROUPSSS ARE: ", groups)
+
       return render_template("new_game.html", groups=groups)
   else:
     return render_template("index.html", game=session["userrow"])
@@ -66,13 +66,6 @@ def end_game():
     get_db().commit()
     return redirect("/archive")
 
-  # select active game(s) from games where the group_id (in groups) is the same as the group_id in games
-  # AND the user_id in groups is the same as session["user_id"]
-  # ===> GET USER'S GAME IF ANY
-  # IF NONE, BUTTON directing to new_game.html, route new_game (INSERT into games), redir to "/"
-  # -- check if user's turn (use helper function isturn())
-  #-- DISPLAY form with ROUND#, last sentence, textbox, "Submit&Next" Button (greys out/hides, pass control), cheat API, "submit&End Game" redir to "Reveal Story"
-  # (-> archive, inactive)
 @app.route("/archive", methods=["GET", "POST"])
 @login_required
 def archive():
@@ -247,7 +240,7 @@ def new_group():
       user_id = query_db("SELECT user_id FROM users WHERE name=?", [field[0]], one=True)["user_id"]
       # check that user not duplicated in form AND group
       # if user enters inexistent username, remove all entries - handle in JS better...
-      if (turn > 0) and (user_id is None):
+      if user_id is None:
         get_db().execute("DELETE FROM groups WHERE group_name=?", (group_name,))
         get_db().commit()
         return apology(field[0]+" is not registered")
@@ -275,35 +268,74 @@ def new_group():
 @app.route("/groups", methods=["GET", "POST"])
 @login_required
 def groups():
-  groups = query_db("SELECT group_name FROM groups WHERE user_id=?", [session["user_id"]], one=False)
+  groups = query_db("SELECT * FROM groups WHERE user_id=?", [session["user_id"]], one=False)
 
   if request.method == "POST":
     request.get("leave")
   else:
     return render_template("groups.html", groups=groups)
 
-@app.route("/join_group", methods=["GET", "POST"])
-@login_required
-def join_group():
-  #TODO
-  return render_template ("join_group.html")
 
-@app.route("/group/<group>")
+@app.route("/group/<groupname>")
 @login_required
-def group(group):
+def group(groupname):
   #TODO .. DISPLAY ...db requests on group info based on group name, members, games, date
-  return render_template("group.html", group=group)
+  group = query_db("SELECT * FROM groups WHERE group_name=?", [groupname], one=True)
+  members = query_db("SELECT * FROM users INNER JOIN groups ON groups.user_id=users.user_id WHERE groups.group_name=?", [groupname], one=False)
+  return render_template("group.html", group=group, members=members)
 
 @app.route("/add/<group>", methods=["GET", "POST"])
 @login_required
 def add(group):
-  #if request.method == "POST":
+ if request.method == "POST":
+  # set turn in group (for game) to highest before looping to add new members
+    turn = query_db("SELECT MAX(turn) FROM groups WHERE group_name=?", [group], one=True)["MAX(turn)"]
+    print("TURN IS: ", turn)
+    old_size = turn
+    users = []
+    # get usernames typed into fields[]
+    for field in zip(request.form.getlist("fields[]")):
+     if not field[0]:
+      return apology("Please select player")
+     user = query_db("SELECT user_id FROM users WHERE name=?", [field[0]], one=True)
+     # store users added in list to flash
+     users.append(field[0])
 
+    # check that user not duplicated in form AND group
+    # if user enters inexistent username, remove all entries - handle in JS better...
+     if user is None:
+      get_db().execute("DELETE FROM groups WHERE group_name=? AND turn>?", (group, old_size))
+      get_db().commit()
+      return apology(field[0]+" is not registered")
+    # if username entered is already in group, remove all entries - handle in JS better...
+    checkusers = query_db("SELECT user_id FROM groups WHERE group_name=?", [group], one=False)
+    if checkusers:
+     for check in checkusers:
+      print("CHECK IS:", check["user_id"])
+      if (turn>=old_size) and (user["user_id"] == check["user_id"]):
+       get_db().execute("DELETE FROM groups WHERE group_name=? AND turn>?", (group, old_size))
+       get_db().commit()
+       return apology(field[0]+ " is already added to "+ group)
+    turn+=1
+
+    print("USERS ARE: ", users)
+    try:
+      get_db().execute("INSERT INTO groups (group_name, turn, user_id) VALUES (:group_name, :turn, :user_id)", {"group_name":group, "turn":turn, "user_id":user["user_id"]})
+      get_db().commit()
+
+    except sqlite3.IntegrityError:
+      return apology("something went wrong in DB")
+    flash(", ".join(users)+" added!")
+    return render_template("group.html", group=group)
+ else:
   return render_template("add.html", group=group)
 
 @app.route("/leave_group/<group>")
 @login_required
 def leave_group(group):
+
+  # TODO disallow leaving active group... activegroup = query...
+
   get_db().execute("DELETE FROM groups WHERE user_id=? AND group_name=?", (session["user_id"], group))
   get_db().commit()
   flash("You left "+group+"!")
