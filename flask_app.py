@@ -113,6 +113,14 @@ def live_game():
     session["round"] = 1 + query_db("SELECT COUNT(*) FROM sentences WHERE game_id=?", [session["userrow"]["game_id"]], one=True)["COUNT(*)"]
     lastplayer = query_db("SELECT name FROM users WHERE user_id=?", [lastsntnc["user_id"]], one=True)["name"]
     sentence = lastsntnc["sentence"]
+    lastwords = sentence.split(" ")
+    length = len(lastwords)
+    if length > 7:
+      i = length - 7
+      del lastwords[:i]
+      sentence = " ".join(lastwords)
+
+    last7 = sentence.split()
   # if it is the user's turn (game's turn == user's's turn?)
   isturn = (session["gamerow"]["turn"] == session["userrow"]["turn"])
   # get current player's name to display who's turn it is if not user's
