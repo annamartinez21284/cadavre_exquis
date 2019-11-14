@@ -2,7 +2,7 @@ import os
 
 from flask import Flask, render_template, request, session, redirect, flash, g
 from flask_session import Session
-from helpers import login_required, apology, get_db, query_db
+from helpers import login_required, apology, get_db, query_db, number_sentences
 from tempfile import mkdtemp
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
@@ -64,6 +64,9 @@ def end_game():
     get_db().execute("INSERT INTO sentences (game_id, sentence, group_name, user_id, time) VALUES (:game_id, :sentence, :group_name, :user_id, :timestamp)", {"game_id":session["gamerow"]["game_id"], "sentence":newsentence, "group_name":group_name, "user_id":session["gamerow"]["user_id"], "timestamp":datetime.now()})
     get_db().execute("UPDATE games SET active=? WHERE group_name=?",(0, group_name))
     get_db().commit()
+    session["round"] = None
+    session["userrow"] = None
+    session["gamerow"] = None
     return redirect("/archive")
 
 @app.route("/archive", methods=["GET", "POST"])
@@ -125,8 +128,13 @@ def next():
     # insert written sentence into group's game
     group_name = session["gamerow"]["group_name"]
     newsentence = request.form.get("newsentence")
+
+    if number_sentences(newsentence) > 1:
+      flash("Please write only one sentence.")
+      return redirect("/live_game")
+
     get_db().execute("INSERT INTO sentences (game_id, sentence, group_name, user_id, time) VALUES (:game_id, :sentence, :group_name, :user_id, :timestamp)", {"game_id":session["gamerow"]["game_id"], "sentence":newsentence, "group_name":group_name, "user_id":session["gamerow"]["user_id"], "timestamp":datetime.now()})
-    get_db().commit()
+    get_db().commit() # do i need this?
     # get current turn, max turn (# of players), increment & insert to DB
     turn = session["userrow"]["turn"]
     maxturn = query_db("SELECT MAX(turn) FROM groups WHERE group_name=?", [group_name], one=True)["MAX(turn)"]
@@ -145,13 +153,13 @@ def new_game():
   # get group_name from form & initiating user's turn
   if request.method == "POST":
     group_name = request.form.get("group")
-    # think below unreachable, redundant, NO actually - ensures that users in active group cannot start playing another game!
-    if query_db("SELECT * FROM games WHERE group_name=? AND active=?", [group_name, "1"], one=True):
-      flash(group_name, " is already currently playing a game.")
-      return redirect ("/live_game")
+
     # check that no game started with group where one of members is currently in an active game
     activeusers = query_db("SELECT users.user_id FROM games INNER JOIN groups ON groups.group_name=games.group_name INNER JOIN users ON users.user_id=groups.user_id WHERE games.active=?", [True,], one=False)
     members = query_db("SELECT user_id FROM groups WHERE group_name=?", [group_name], one=False)
+    if len(members)<3:
+        flash(group_name+" does not have enough players. Add at least 3 to start a game.")
+        return redirect("/")
     intersection = [value for value in activeusers if value in members]
     if intersection:
       flash("One or more members of selected group is busy playing.")
@@ -333,9 +341,10 @@ def add(group):
 @app.route("/leave_group/<group>")
 @login_required
 def leave_group(group):
-
-  # TODO disallow leaving active group... activegroup = query...
-
+  # Disallow leaving active group
+  if session["gamerow"]["group_name"] == group:
+      flash(group+" is currently playing with you. End game before leaving the group.")
+      return redirect("/groups")
   get_db().execute("DELETE FROM groups WHERE user_id=? AND group_name=?", (session["user_id"], group))
   get_db().commit()
   flash("You left "+group+"!")

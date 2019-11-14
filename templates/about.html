@@ -3,3 +3,46 @@
 {% block title %}
     About Cadavre Exquis
 {% endblock %}
+
+{% block main %}
+
+<div class="container-fluid">
+
+<p class="text-justify">
+Cadavre Exquis is a game invented and popularised in surrealist circles in the early 20th
+century (<a href="https://en.wikipedia.org/wiki/Exquisite_corpse">more</a>).
+I was introduced to it by my friend and young writer Felix in Portugal last year.
+We played in a bar with pen, paper and cocktails. Credit goes to him for inspiring this
+(web? Python? Flask?) version for my final project in CS50. Merci, Felix :)
+</P>
+
+<p class="font-weight-bold" align="left">How does it work?</p>
+
+<p class="text-justify">
+In the live version of the game, a group of minimum 3 uses a pen and a piece of paper to collaboratively
+write a story. Player #1 will start with a sentence and pass it on to the next in line, covering up
+all but the last one or two lines, just enough to give player #2 a cue to continue the storyline with
+the next sentence. Player #2 will then cover up all of player #1 and all but 1 or 2 lines of his/her
+own sentence before passing the paper on to player #3, and so on...
+When players run out of paper or decide to finish the game, the paper is uncovered/unfolded and the
+story revealed. </P>
+
+<p class="font-weight-bold" align="left">To get started with this web-version...</P>
+
+<ol align="left" class="text-justify">
+<li>Sign Up with a username and password.</li>
+<li>You will need at least 3 players to start playing.</li>
+<li>To start a new group, navigate to "Groups->Start New Group", pick a name for your group and add
+players (you will need to know their usernames and they are case-sensitive).</li>
+<li>To add players to an existing group, navigate to "Groups->My Groups" and click on the group name
+to view details and add members.</li>
+<li>To start a game, click on the top left "Cadavre Exquis" welcome menu, click on "Start New Game",
+select a group and start playing!</li>
+<li>Make sure you write one full sentence. The next in line will be shown the last 7 words of it.</li>
+<li>When you wish to end the game and it is your turn, just select "End Story" when you are done
+writing.</li>
+<li>To view the full story, go to "Archive" where you will find a list of all your stories.</li>
+</ol>
+</div>
+
+{% endblock %}

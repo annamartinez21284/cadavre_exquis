@@ -2,6 +2,13 @@ from flask import redirect, session, render_template, g
 from functools import wraps
 import sqlite3
 import requests
+import nltk
+nltk.download('punkt')
+from nltk.tokenize import sent_tokenize
+
+def number_sentences(text):
+  return len(sent_tokenize(text))
+
 
 # https://flask.palletsprojects.com/en/1.1.x/patterns/sqlite3/
 #open database and return Row objects (namedtuples) from queries

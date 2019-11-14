@@ -32,13 +32,13 @@
     <body>
 
         <nav class="navbar navbar-expand-md navbar-light bg-light border">
-            <a class="navbar-brand" href="/"><span class="green">Cadavre Exquis</span></a>
+            <a class="navbar-brand mb-4" href="/"><span class="blue">Cadavre Exquis</span></a>
             <button aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler" data-target="#navbar" data-toggle="collapse" type="button">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbar">
                 {% if session.user_id %}
-                    <ul class="navbar-nav mr-auto mt-2">
+                    <ul class="navbar-nav mr-auto mt-3">
 
                         <li class="nav-item"><a class="nav-link" href="/live_game">Live Story</a></li>
                         <li class="nav-item"><a class="nav-link" href="/archive">Archive</a></li>
@@ -50,8 +50,8 @@
                           </ul>
                         </li>
                     </ul>
-                    <ul class="navbar-nav ml-auto mt-2">
-                        <li class="nav-item"><a class="nav-link" href="/logout">Log Out</a></li>
+                    <ul class="navbar-nav navbar-right ml-auto mt-3 mr-2">
+                        <li class="nav-item" ><a class="nav-link" href="/logout">Log Out</a></li>
                     </ul>
                 {% else %}
                     <ul class="navbar-nav ml-auto mt-2">
@@ -65,10 +65,12 @@
         {% if session.user_id %}
 
         <div class="media" align="left">
-          <img class="p-1" src="{{url_for('static',filename='pen.png')}}" class="align-self-start mr-3" height="60" width="60" alt="...">
-          <div class="media-body">
-            <h5 class="mt-0">Welcome {{ session.name }}!</h5>
-            Anything else i wanna add...
+
+          <img class="p-2 mt-0 mb-2" src="{{url_for('static',filename='pen.png')}}" class="align-self-start mr-3" height="60" width="60" alt="...">
+
+          <div class="media-heading">
+            <h4 class="mt-1">Welcome {{ session.name }}!</h5>
+
           </div>
         </div>
 
@@ -86,7 +88,7 @@
             {% block main %}{% endblock %}
         </main>
 
-        <footer class="small text-center text-muted">
+        <footer class="small text-center text-muted" id="footer">
             Credits, Made on Python 3.7 etc <a href="https://iextrading.com/developer">PROVIDER</a>. View <a href="https://iextrading.com/api-exhibit-a/">PROVIDER’s Terms of Use</a>.
         </footer>
 
