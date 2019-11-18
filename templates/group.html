@@ -13,7 +13,7 @@
       {% endfor %}<br>
       <form>
         <button name="leave" class="btn btn-secondary" type="submit" formaction="/leave_group/{{group}}">Leave Group</button><br>
-        <button name="add" class="btn btn-secondary" type="submit" formaction="/add/{{group}}"> Add Members</button>
+        <button name="add" class="btn btn-secondary" type="submit" formaction="/add/{{group["group_name"]}}"> Add Members</button>
       </form>
       <br>
 

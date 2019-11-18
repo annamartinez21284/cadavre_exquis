@@ -308,8 +308,10 @@ def group(groupname):
 def add(group):
  if request.method == "POST":
   # set turn in group (for game) to highest before looping to add new members
+    print("GROUP NAME IS: ", group)
     turn = query_db("SELECT MAX(turn) FROM groups WHERE group_name=?", [group], one=True)["MAX(turn)"]
     print("TURN IS: ", turn)
+    print("GROUP NAME IS: ", group)
     old_size = turn
     users = []
     # get usernames typed into fields[]
@@ -325,7 +327,8 @@ def add(group):
      if user is None:
       get_db().execute("DELETE FROM groups WHERE group_name=? AND turn>?", (group, old_size))
       get_db().commit()
-      return apology(field[0]+" is not registered")
+      flash(field[0]+" is not registered")
+      return redirect("/groups")
     # if username entered is already in group, remove all entries - handle in JS better...
     checkusers = query_db("SELECT user_id FROM groups WHERE group_name=?", [group], one=False)
     if checkusers:
@@ -334,7 +337,8 @@ def add(group):
       if (turn>=old_size) and (user["user_id"] == check["user_id"]):
        get_db().execute("DELETE FROM groups WHERE group_name=? AND turn>?", (group, old_size))
        get_db().commit()
-       return apology(field[0]+ " is already added to "+ group)
+       flash(field[0]+ " is already added to "+ group)
+       return redirect("/groups")
     turn+=1
 
     print("USERS ARE: ", users)
