@@ -1,6 +1,6 @@
 # Cadavre Exquis
 Collaborative story-writing game implemented as web-application on Python 3.7.
-In the live version a group of minimum 3 uses a pen and a piece of paper to collaboratively write a story [more](https://en.wikipedia.org/wiki/Exquisite_corpse).
+In the live version a group of minimum 3 uses a pen and a piece of paper to collaboratively write a story ([more](https://en.wikipedia.org/wiki/Exquisite_corpse)).
 Player #1 will start with a sentence and pass it on to the next in line, covering up
 all but the last one or two lines, just enough to give player #2 a cue to continue the storyline with
 the next sentence. Player #2 will then cover up all of player #1 and all but 1 or 2 lines of his/her
