@@ -5,9 +5,79 @@ import requests
 import nltk
 nltk.download('punkt')
 from nltk.tokenize import sent_tokenize
+from sqlite3 import Error
 
-def number_sentences(text):
-  return len(sent_tokenize(text))
+# https://www.sqlitetutorial.net/sqlite-python/create-tables/
+def create_connection(db_file):
+  conn = None
+  try:
+    conn = sqlite3.connect(db_file)
+    return conn
+  except Error as e:
+    print(e)
+  return conn
+
+def create_table(conn, create_table_sql):
+  try:
+    c = conn.cursor()
+    c.execute(create_table_sql)
+  except Error as e:
+    print(e)
+
+def schema():
+  database = r"ce.db"
+  sql_users = """ CREATE TABLE IF NOT EXISTS users (
+	user_id INTEGER PRIMARY KEY,
+	name VARCHAR(255) NOT NULL,
+	hash VARCHAR(255) NOT NULL,
+	UNIQUE(name));"""
+
+  sql_groups = """ CREATE TABLE IF NOT EXISTS groups (
+	group_name VARCHAR(255) NOT NULL,
+	turn INTEGER NOT NULL,
+	user_id INTEGER,
+	FOREIGN KEY (user_id) REFERENCES users(user_id)
+	ON UPDATE CASCADE
+	ON DELETE CASCADE);"""
+
+  sql_sentences = """ CREATE TABLE IF NOT EXISTS sentences (
+	counter INTEGER PRIMARY KEY,
+	game_id INTEGER,
+	sentence TEXT,
+	group_name VARCHAR(255),
+	user_id INTEGER,
+	time TIMESTAMP,
+	FOREIGN KEY (game_id) REFERENCES games(game_id)
+	ON UPDATE CASCADE
+	ON DELETE CASCADE,
+	FOREIGN KEY (group_name) REFERENCES groups(group_name)
+	ON UPDATE CASCADE
+	ON DELETE NO ACTION,
+	FOREIGN KEY (user_id) REFERENCES users(user_id)
+	ON UPDATE CASCADE
+	ON DELETE NO ACTION);"""
+
+  sql_games = """ CREATE TABLE IF NOT EXISTS games (
+	game_id INTEGER PRIMARY KEY,
+	active INTEGER,
+	turn INTEGER,
+	group_name VARCHAR(255) NOT NULL,
+	FOREIGN KEY (turn) REFERENCES groups(turn)
+	ON UPDATE CASCADE
+	ON DELETE CASCADE,
+	FOREIGN KEY (group_name) REFERENCES groups(group_name)
+	ON UPDATE CASCADE
+	ON DELETE NO ACTION);"""
+
+  conn = create_connection(database)
+
+  if conn is not None:
+    create_table(conn, sql_users)
+    create_table(conn, sql_groups)
+    create_table(conn, sql_sentences)
+    create_table(conn, sql_games)
+  else:
+    print("Error! cannot create the database connection.")
 
 
 # https://flask.palletsprojects.com/en/1.1.x/patterns/sqlite3/
@@ -56,3 +126,6 @@ def apology(message, code=400):
             s = s.replace(old, new)
         return s
     return render_template("apology.html", top=code, bottom=escape(message)), code
+
+def number_sentences(text):
+  return len(sent_tokenize(text))

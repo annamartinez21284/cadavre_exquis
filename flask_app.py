@@ -2,7 +2,7 @@ import os
 
 from flask import Flask, render_template, request, session, redirect, flash, g
 from flask_session import Session
-from helpers import login_required, apology, get_db, query_db, number_sentences
+from helpers import login_required, apology, get_db, query_db, number_sentences, schema
 from tempfile import mkdtemp
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
@@ -13,12 +13,15 @@ import sqlite3
 # Configure application
 app = Flask(__name__)
 
+# Create database if it doesn't exist
+schema()
+
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 # Logs debugging info tracing how template was loaded
 app.config["EXPLAIN_TEMPLATE_LOADING"] = True # so where is it?
 
-# Ensure responses aren't cached - LOOK INTO THIS
+# Ensure responses aren't cached
 @app.after_request
 def after_request(response):
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
