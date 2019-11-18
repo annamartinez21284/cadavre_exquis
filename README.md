@@ -1,6 +1,6 @@
 # Cadavre Exquis
 Collaborative story-writing game implemented as web-application on Python 3.7.
-In the live version a group of minimum 3 uses a pen and a piece of paper to collaboratively write a story [more(https://en.wikipedia.org/wiki/Exquisite_corpse)].
+In the live version a group of minimum 3 uses a pen and a piece of paper to collaboratively write a story [more](https://en.wikipedia.org/wiki/Exquisite_corpse).
 Player #1 will start with a sentence and pass it on to the next in line, covering up
 all but the last one or two lines, just enough to give player #2 a cue to continue the storyline with
 the next sentence. Player #2 will then cover up all of player #1 and all but 1 or 2 lines of his/her
@@ -52,7 +52,6 @@ Installed packages required are:
 * Werkzeug (0.16.0)
 
 ## Schema
-
 When running, the program will create the following schema in a database file using sqlite3:
 
     CREATE TABLE users (
@@ -97,8 +96,15 @@ When running, the program will create the following schema in a database file us
 	    ON DELETE CASCADE,
 	    FOREIGN KEY (group_name) REFERENCES groups(group_name)
 	    ON UPDATE CASCADE
-	    ON DELETE NO ACTION
-    );
+	    ON DELETE NO ACTION);
 
   # Limitations
-  
+
+  * Players can only play one game at a time
+  * In order to add members to a group, the members need to have created an account and the user adding them,
+  needs to know their usernames. There is no way to look these up and there is no way for a user to look up
+  and/or join an existing group.
+  * There is no email address linked to the accounts and there is also no way to recover/reset forgotten passwords.
+  * The layout and GUI can be embellished, it is very rudimentary. e.g. the final stories could be displayed with
+  varying colors/fonts to tell one player's sentence from the next.
+  * All the warnings/flash messages would probably better be handled in Javascript, instead of using Python flash messages.
