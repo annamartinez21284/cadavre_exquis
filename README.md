@@ -66,8 +66,7 @@ When running, the program will create the following schema in a database file us
 	    user_id INTEGER,
 	    FOREIGN KEY (user_id) REFERENCES users(user_id)
 	    ON UPDATE CASCADE
-	    ON DELETE CASCADE
-    );
+	    ON DELETE CASCADE);
 
     CREATE TABLE IF NOT EXISTS sentences (
     	counter INTEGER PRIMARY KEY,
