@@ -107,3 +107,4 @@ When running, the program will create the following schema in a database file us
   * The layout and GUI can be embellished, it is very rudimentary. e.g. the final stories could be displayed with
   varying colors/fonts to tell one player's sentence from the next.
   * All the warnings/flash messages would probably better be handled in Javascript, instead of using Python flash messages.
+  * When creating a group, the user needs to add him/herself and there is no check to ensure that the user creating is also in the group.
