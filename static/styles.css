@@ -38,6 +38,12 @@ main .form-control
     width: auto;
 }
 
+main .form-control-plaintext
+{
+  display: inline-block;
+  text-align: center;
+}
+
 main
 {
     /* scroll horizontally as needed */

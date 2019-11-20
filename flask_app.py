@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, render_template, request, session, redirect, flash, g
+from flask import Flask, render_template, request, session, redirect, flash, g, jsonify
 from flask_session import Session
 from helpers import login_required, apology, get_db, query_db, number_sentences, schema
 from tempfile import mkdtemp
@@ -41,6 +41,19 @@ app.config["SESSION_PERMANENT"] = False #default to true, use perm sess, why fal
 app.config["SESSION_TYPE"] = "filesystem"  #defaults to null
 Session(app) #creates Session-object by passing it the application
 
+@app.route("/check", methods=["GET"])
+def check():
+  #Return true if username available, else false, in JSON format
+  name = request.args.get("username")
+  result = query_db("SELECT name FROM users WHERE name=?", [name], one=True)
+  print("SEE THIS?")
+  if not result:
+    print ("NOT RESULT")
+    return jsonify(True)
+
+  return jsonify(False)
+
+
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def index():
@@ -75,9 +88,9 @@ def end_game():
 @app.route("/archive", methods=["GET", "POST"])
 @login_required
 def archive():
-  # these are all the sentences ever played by groups user is in, GROUP BY GAME AND ORDER BY TIMESTAMP, GIVE IT NAMES AS so accessible under 2nd qery
+  # these are all the sentences ever played by groups user is in, ORDERED BY TIMESTAMP
   sentences = query_db("SELECT game_id, sentence, time FROM sentences INNER JOIN groups ON groups.group_name=sentences.group_name INNER JOIN users ON users.user_id=groups.user_id WHERE users.user_id=? ORDER BY time", [session["user_id"]], one=False)
-  games = query_db("SELECT games.game_id, time FROM sentences INNER JOIN groups ON groups.group_name=sentences.group_name INNER JOIN users ON users.user_id=groups.user_id INNER JOIN games ON games.game_id=sentences.game_id WHERE users.user_id=? AND games.active=? GROUP BY sentences.game_id ORDER BY time", [session["user_id"], 0], one=False)
+  games = query_db("SELECT games.game_id, time, games.group_name FROM sentences INNER JOIN groups ON groups.group_name=sentences.group_name INNER JOIN games ON games.game_id=sentences.game_id WHERE groups.user_id=? AND games.active=? GROUP BY games.game_id ORDER BY time", [session["user_id"], 0], one=False)
   # create dict "stories" saving only date and story-string
   stories = {}
   for game in games:
@@ -86,6 +99,7 @@ def archive():
       if sen["game_id"] == game["game_id"]:
         s = s + sen["sentence"] + " "
     stories[game["time"]] = s
+
   # save dict in session, beacuse for some reason passed on stories (originally a dict) variable via archive.html only contains game["time"]-key, not value(story)
   session["stories"] = stories
   return render_template("archive.html", stories=stories)
@@ -100,8 +114,8 @@ def story(stories):
 @app.route("/live_game", methods=["GET", "POST"])
 @login_required
 def live_game():
+  # if no live game played by user, redirect to /
   if session["userrow"] is None:
-    print("IS THIS COING OUT?")
     return redirect("/")
 
   # get last written sentence
@@ -111,6 +125,7 @@ def live_game():
     session["round"] = 1
     sentence = None
     lastplayer = None
+
   # otherwise get round (#of sentences in game +1), last player and last sentence to display
   else:
     session["round"] = 1 + query_db("SELECT COUNT(*) FROM sentences WHERE game_id=?", [session["userrow"]["game_id"]], one=True)["COUNT(*)"]
@@ -198,18 +213,22 @@ def sign_up():
   if request.method == "POST":
     name = request.form.get("username")
     if not name:
-      return apology("Please provide username") #handle in JS later OR USE flash? Nad below too? to het popup confirming stuff
+      flash("Please provide username")
+      return redirect("/sign_up")
     if not request.form.get("password") or not request.form.get("confirmation"):
-      return apology("Please provide password and confirm it")
+      flash("Please provide password and confirm it")
+      return redirect("/sign_up")
 
     hashp = generate_password_hash(request.form.get("password"), method='pbkdf2:sha256', salt_length=8)
     if not check_password_hash(hashp, request.form.get("confirmation")):
-      return apology("password does not match confirmation")
+      flash("Password does not match confirmation")
+      return redirect("/sign_up")
     try:
       cur = get_db().execute("INSERT INTO users (name, hash) VALUES (:name, :hash)", {"name":name, "hash":hashp})
       get_db().commit()
     except sqlite3.IntegrityError:
-      return apology("username already exists")
+      flash("Username already exists")
+      return redirect("/sign_up")
 
     # Login user automatically, storing their id in session, then layout will also show index.html? &menu?
     session["user_id"] = query_db("SELECT user_id FROM users WHERE name=?", [name], one=True)["user_id"]
@@ -223,17 +242,19 @@ def login():
     session.clear()
     if request.method == "POST":
       if not (request.form.get("username") and request.form.get("password")):
-        return apology("Please provide username and password.") # handle in JS
+        return apology("Please provide username and password.")
 
       name = query_db("SELECT name FROM users WHERE name=?", [request.form.get("username")], one=True)
-      if not name: # try if name is None
-        return apology("Username not found.")
+      if not name:
+        flash("Username not found.")
+        return redirect("/login")
 
       name = name["name"]
       hash = query_db("SELECT hash FROM users WHERE name=?", [name], one=True)["hash"]
 
       if not check_password_hash(hash, request.form.get("password")):
-        return apology("Password incorrect.")
+        flash("Password incorrect.")
+        return redirect("/login")
       else:
         session["user_id"] = query_db("SELECT user_id FROM users WHERE name=?", [name], one=True)["user_id"]
         session["name"] = name
@@ -246,36 +267,41 @@ def new_group():
   if request.method == "POST":
     group_name = request.form.get("group_name")
     if not group_name:
-      return apology("Please choose a group name!") # handle in JS
+      flash("Please choose a group name!")
+      return redirect("/new_group")
 
     if query_db("SELECT * FROM groups WHERE group_name=?", [group_name], one=True) is not None:
-      return apology("Group name not available.")
+      flash("Group name not available.")
+      return redirect("/new_group")
     # set turn in group (for game) to 0 before looping
     turn=0
     # get usernames typed into fields[]
     for field in zip(request.form.getlist("fields[]")):
       if not field[0]:
-        return apology("Please select player")
-      user_id = query_db("SELECT user_id FROM users WHERE name=?", [field[0]], one=True)["user_id"]
+        flash("Please select player")
+        return redirect("/new_group")
+      user_id = query_db("SELECT user_id FROM users WHERE name=?", [field[0]], one=True)
       # check that user not duplicated in form AND group
       # if user enters inexistent username, remove all entries - handle in JS better...
       if user_id is None:
         get_db().execute("DELETE FROM groups WHERE group_name=?", (group_name,))
         get_db().commit()
-        return apology(field[0]+" is not registered")
+        flash(field[0]+" is not registered")
+        return redirect("/new_group")
       # if username entered is already in group, remove all entries - handle in JS better...
       checkusers = query_db("SELECT user_id FROM groups WHERE group_name=?", [group_name], one=False)
       if checkusers:
         for check in checkusers:
           print("CHECK IS:", check["user_id"])
-          if (turn>0) and (user_id == check["user_id"]):
+          if (turn>0) and (user_id["user_id"] == check["user_id"]):
             get_db().execute("DELETE FROM groups WHERE group_name=?", (group_name,))
             get_db().commit()
-            return apology(field[0]+ " is already added to "+ group_name)
+            flash(field[0]+ " is already added to "+ group_name)
+            return redirect("/new_group")
 
       turn+=1
       try:
-        get_db().execute("INSERT INTO groups (group_name, turn, user_id) VALUES (:group_name, :turn, :user_id)", {"group_name":group_name, "turn":turn, "user_id":user_id})
+        get_db().execute("INSERT INTO groups (group_name, turn, user_id) VALUES (:group_name, :turn, :user_id)", {"group_name":group_name, "turn":turn, "user_id":user_id["user_id"]})
         get_db().commit()
 
       except sqlite3.IntegrityError:
@@ -308,16 +334,14 @@ def group(groupname):
 def add(group):
  if request.method == "POST":
   # set turn in group (for game) to highest before looping to add new members
-    print("GROUP NAME IS: ", group)
     turn = query_db("SELECT MAX(turn) FROM groups WHERE group_name=?", [group], one=True)["MAX(turn)"]
-    print("TURN IS: ", turn)
-    print("GROUP NAME IS: ", group)
     old_size = turn
     users = []
     # get usernames typed into fields[]
     for field in zip(request.form.getlist("fields[]")):
      if not field[0]:
-      return apology("Please select player")
+      flash("Please select player(s)")
+      return render_template ("add.html", group = group)
      user = query_db("SELECT user_id FROM users WHERE name=?", [field[0]], one=True)
      # store users added in list to flash
      users.append(field[0])

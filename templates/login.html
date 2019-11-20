@@ -5,7 +5,9 @@
 {% endblock %}
 
 {% block main %}
-  <form action="/login" method="post">
+
+
+  <form action="/login" method="post" id="login">
     <div class="form-group">
             <input autocomplete="off" autofocus class="form-control" name="username" placeholder="Username" type="text" id="username">
     </div>
@@ -15,4 +17,18 @@
 
     <button class="btn btn-primary" type="submit" name="login">Log in</button>
   </form>
+  <script>
+
+
+      document.getElementById('login').addEventListener("submit", function(event)
+      {
+          if (!document.querySelector('#username').value || !document.querySelector('#password').value)
+          {
+              alert('Please provide username and password');
+              event.preventDefault();
+              return false;
+          }
+      });
+
+  </script>
 {% endblock %}

@@ -2,6 +2,18 @@
 
 <html lang="en">
 
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class="flashes">
+       {% for message in messages %}
+        <div class="message_flash">{{ message }}</div>
+       {% endfor %}
+   </ul>
+ {% endif %}
+{% endwith %}
+{% block body %}
+{% endblock %}
+
     <head>
 
         <!-- Required meta tags -->
@@ -31,6 +43,7 @@
     </head>
 
     <body>
+
 
         <nav class="navbar navbar-expand-md navbar-light bg-light border">
             <a class="navbar-brand mb-4" href="/"><span class="blue">Cadavre Exquis</span></a>
