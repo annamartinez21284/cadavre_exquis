@@ -81,7 +81,7 @@ def schema():
 
 
 # https://flask.palletsprojects.com/en/1.1.x/patterns/sqlite3/
-#open database and return Row objects (namedtuples) from queries
+# open database and return Row objects (namedtuples) from queries
 def get_db():
   db=getattr(g, '_database', None)
   if db is None:
