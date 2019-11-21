@@ -2,19 +2,15 @@ import os
 
 from flask import Flask, render_template, request, session, redirect, flash, g, jsonify
 from flask_session import Session
-from helpers import login_required, apology, get_db, query_db, number_sentences, schema
+from helpers import login_required, apology, get_db, query_db, number_sentences
 from tempfile import mkdtemp
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 import sqlite3
 
-# when/why do I need to import OS?
-
 # Configure application
 app = Flask(__name__)
 
-# Create database if it doesn't exist
-schema()
 
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -46,9 +42,7 @@ def check():
   #Return true if username available, else false, in JSON format
   name = request.args.get("username")
   result = query_db("SELECT name FROM users WHERE name=?", [name], one=True)
-  print("SEE THIS?")
   if not result:
-    print ("NOT RESULT")
     return jsonify(True)
 
   return jsonify(False)
@@ -137,7 +131,6 @@ def live_game():
       i = length - 7
       del lastwords[:i]
       sentence = " ".join(lastwords)
-
     last7 = sentence.split()
   # if it is the user's turn (game's turn == user's's turn?)
   isturn = (session["gamerow"]["turn"] == session["userrow"]["turn"])
@@ -160,7 +153,7 @@ def next():
       return redirect("/live_game")
 
     get_db().execute("INSERT INTO sentences (game_id, sentence, group_name, user_id, time) VALUES (:game_id, :sentence, :group_name, :user_id, :timestamp)", {"game_id":session["gamerow"]["game_id"], "sentence":newsentence, "group_name":group_name, "user_id":session["gamerow"]["user_id"], "timestamp":datetime.now()})
-    get_db().commit() # do i need this?
+
     # get current turn, max turn (# of players), increment & insert to DB
     turn = session["userrow"]["turn"]
     maxturn = query_db("SELECT MAX(turn) FROM groups WHERE group_name=?", [group_name], one=True)["MAX(turn)"]
@@ -201,7 +194,6 @@ def new_game():
     return render_template("live_game.html", turn=row["turn"], round=session["round"], isturn=True, group_name=group_name)
   else:
     groups = query_db("SELECT group_name FROM groups WHERE user_id=?", [session["user_id"]], one=False)
-    print("GORUPS ARE:", groups)
     return render_template("new_game.html", groups=groups)
 
 
@@ -213,22 +205,19 @@ def sign_up():
   if request.method == "POST":
     name = request.form.get("username")
     if not name:
-      flash("Please provide username")
-      return redirect("/sign_up")
+      return apology("Please provide username")
     if not request.form.get("password") or not request.form.get("confirmation"):
-      flash("Please provide password and confirm it")
-      return redirect("/sign_up")
+      return apology("Please provide password and confirm it")
 
     hashp = generate_password_hash(request.form.get("password"), method='pbkdf2:sha256', salt_length=8)
     if not check_password_hash(hashp, request.form.get("confirmation")):
-      flash("Password does not match confirmation")
-      return redirect("/sign_up")
+      return apology("Password does not match confirmation.")
+
     try:
       cur = get_db().execute("INSERT INTO users (name, hash) VALUES (:name, :hash)", {"name":name, "hash":hashp})
       get_db().commit()
     except sqlite3.IntegrityError:
-      flash("Username already exists")
-      return redirect("/sign_up")
+      return apology("Username already exists")
 
     # Login user automatically, storing their id in session, then layout will also show index.html? &menu?
     session["user_id"] = query_db("SELECT user_id FROM users WHERE name=?", [name], one=True)["user_id"]
@@ -236,6 +225,7 @@ def sign_up():
     return render_template("index.html")
   else:
     return render_template("sign_up.html")
+
 
 @app.route("/login", methods = ["GET", "POST"])
 def login():
@@ -246,20 +236,20 @@ def login():
 
       name = query_db("SELECT name FROM users WHERE name=?", [request.form.get("username")], one=True)
       if not name:
-        flash("Username not found.")
-        return redirect("/login")
+        return apology("Username not found.")
 
       name = name["name"]
       hash = query_db("SELECT hash FROM users WHERE name=?", [name], one=True)["hash"]
 
       if not check_password_hash(hash, request.form.get("password")):
-        flash("Password incorrect.")
-        return redirect("/login")
+        return apology("Password incorrect.")
+
       else:
         session["user_id"] = query_db("SELECT user_id FROM users WHERE name=?", [name], one=True)["user_id"]
         session["name"] = name
         return redirect ("/")
     return render_template("login.html")
+
 
 @app.route("/new_group", methods = ["GET", "POST"])
 @login_required
@@ -282,13 +272,13 @@ def new_group():
         return redirect("/new_group")
       user_id = query_db("SELECT user_id FROM users WHERE name=?", [field[0]], one=True)
       # check that user not duplicated in form AND group
-      # if user enters inexistent username, remove all entries - handle in JS better...
+      # if user enters inexistent username, remove all entries
       if user_id is None:
         get_db().execute("DELETE FROM groups WHERE group_name=?", (group_name,))
         get_db().commit()
         flash(field[0]+" is not registered")
         return redirect("/new_group")
-      # if username entered is already in group, remove all entries - handle in JS better...
+      # if username entered is already in group, remove all entries
       checkusers = query_db("SELECT user_id FROM groups WHERE group_name=?", [group_name], one=False)
       if checkusers:
         for check in checkusers:
@@ -310,6 +300,7 @@ def new_group():
   else:
     return render_template("new_group.html")
 
+
 @app.route("/groups", methods=["GET", "POST"])
 @login_required
 def groups():
@@ -324,7 +315,6 @@ def groups():
 @app.route("/group/<groupname>")
 @login_required
 def group(groupname):
-  #TODO .. DISPLAY ...db requests on group info based on group name, members, games, date
   group = query_db("SELECT * FROM groups WHERE group_name=?", [groupname], one=True)
   members = query_db("SELECT * FROM users INNER JOIN groups ON groups.user_id=users.user_id WHERE groups.group_name=?", [groupname], one=False)
   return render_template("group.html", group=group, members=members)
@@ -333,7 +323,7 @@ def group(groupname):
 @login_required
 def add(group):
  if request.method == "POST":
-  # set turn in group (for game) to highest before looping to add new members
+   # set turn in group (for game) to highest before looping to add new members
     turn = query_db("SELECT MAX(turn) FROM groups WHERE group_name=?", [group], one=True)["MAX(turn)"]
     old_size = turn
     users = []
@@ -347,13 +337,13 @@ def add(group):
      users.append(field[0])
 
     # check that user not duplicated in form AND group
-    # if user enters inexistent username, remove all entries - handle in JS better...
+    # if user enters inexistent username, remove all entries
      if user is None:
       get_db().execute("DELETE FROM groups WHERE group_name=? AND turn>?", (group, old_size))
       get_db().commit()
       flash(field[0]+" is not registered")
       return redirect("/groups")
-    # if username entered is already in group, remove all entries - handle in JS better...
+    # if username entered is already in group, remove all entries
     checkusers = query_db("SELECT user_id FROM groups WHERE group_name=?", [group], one=False)
     if checkusers:
      for check in checkusers:
@@ -377,6 +367,7 @@ def add(group):
  else:
   return render_template("add.html", group=group)
 
+
 @app.route("/leave_group/<group>")
 @login_required
 def leave_group(group):
@@ -389,9 +380,11 @@ def leave_group(group):
   flash("You left "+group+"!")
   return redirect("/groups")
 
+
 @app.route("/about")
 def about():
     return render_template("about.html")
+
 
 @app.route("/logout")
 def logout():
