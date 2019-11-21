@@ -52,7 +52,11 @@ Installed packages required are:
 * Werkzeug (0.16.0)
 
 ## Schema
-When running, the program will create the following schema in a database file using sqlite3:
+If the database does not yet exist, run:
+
+    python db_setup.py
+
+which will create the following schema:
 
     CREATE TABLE users (
     	user_id INTEGER PRIMARY KEY,
